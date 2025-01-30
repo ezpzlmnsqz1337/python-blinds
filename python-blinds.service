@@ -1,0 +1,13 @@
+[Unit]
+Description=Python Blinds Service
+After=network.target
+
+[Service]
+Type=idle
+Restart=on-failure
+User=root
+WorkingDirectory=/home/mazelpico/workspace/python-blinds
+ExecStart=/home/mazelpico/workspace/python-blinds/blinds/bin/python3 -m blinds
+
+[Install]
+WantedBy=multi-user.target
