@@ -2,3 +2,4 @@
 .micropy
 old
 .mypy*
+upload.sh
