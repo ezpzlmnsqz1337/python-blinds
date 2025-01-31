@@ -32,6 +32,8 @@ class StepperMotor:
                         self.step8,
                         )
         self.current_step = 0
+        self.elapsed_steps = 0
+        self.step_pause = 0.002
 
     def invert_direction(self, invert: bool) -> None:
         self.invert_dir = invert
@@ -78,7 +80,7 @@ class StepperMotor:
         if self.position == self.target:
             if not self.disabled:
                 self.disable()
-                return False
+            return False
         elif self.position < self.target:
             if self.invert_dir:
                 self.step_CCW()
@@ -89,6 +91,10 @@ class StepperMotor:
                 self.step_CW()
             else:
                 self.step_CCW()
+        
+        if self.elapsed_steps != 0 and self.elapsed_steps % 200 == 0:
+            if self.step_pause - 0.0001 > 0.0004:
+                self.step_pause -= 0.0001
         return True
 
     def disable(self) -> None:
@@ -97,31 +103,21 @@ class StepperMotor:
         GPIO.output(self.pin2, GPIO.LOW)
         GPIO.output(self.pin3, GPIO.LOW)
         self.disabled = True
-        # self.save_state()
-
-    def save_state(self) -> None:
-        with open(f'motor{self.id}.cfg', 'w') as f:
-            f.write(f'position:{self.position}\n')
-            f.write(f'limit:{self.limit}\n')
-            f.write(f'target:{self.target}\n')
-
-    def load_state(self) -> None:
-        with open(f'motor{self.id}.cfg', 'r') as f:
-            self.position = int(f.readline().split(':')[1])
-            self.limit = int(f.readline().split(':')[1])
-            self.target = int(f.readline().split(':')[1])
-            self.disabled = False
+        self.elapsed_steps = 0
+        self.step_pause = 0.002
 
     def step_CW(self):
         self.current_step = (self.current_step + 1) % len(self.step_map)
         self.step_map[self.current_step]()
         self.position += -1 if self.invert_dir else 1
+        self.elapsed_steps += 1
 
     def step_CCW(self):
         self.current_step = self.current_step - \
             1 if self.current_step > 0 else (len(self.step_map) - 1)
         self.step_map[self.current_step]()
         self.position += 1 if self.invert_dir else -1
+        self.elapsed_steps += 1
 
     def step1(self):
         GPIO.output(self.pin0, GPIO.HIGH)

@@ -1,6 +1,6 @@
 from blinds.stepper_motor import StepperMotor
 from pathlib import Path
-
+import time
 class MotorsManager:
     def __init__(self, motors: list[StepperMotor]) -> None:
         self.motors = motors
@@ -35,9 +35,21 @@ class MotorsManager:
                 f.write(f"{m.get_limit()}\n")
     
     
-    def move_motors(self) -> None:
-        for m in self.motors:
-            m.move()
+    def move_motors(self) -> bool:
+        moving = False
+        m1_moving = self.motors[0].move()
+        m2_moving = self.motors[1].move()
+        step_pause = self.motors[0].step_pause
+        if m1_moving or m2_moving:
+            moving = True
+        if m1_moving:
+            step_pause = self.motors[0].step_pause
+        if m2_moving:
+            step_pause = self.motors[1].step_pause
+        if m1_moving and m2_moving:
+            step_pause = max(self.motors[0].step_pause, self.motors[1].step_pause)
+        time.sleep(step_pause)
+        return moving
     
     def stop_motors(self) -> None:
         for m in self.motors:

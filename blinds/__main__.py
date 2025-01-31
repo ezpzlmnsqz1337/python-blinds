@@ -43,8 +43,8 @@ def main() -> None:
 
     # move motors
     while True:
-        motors_manager.move_motors()
-        time.sleep(0.001)
+        if not motors_manager.move_motors():
+            time.sleep(1)
 
 
 def cleanup() -> None:
