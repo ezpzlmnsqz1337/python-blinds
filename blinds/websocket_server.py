@@ -1,4 +1,5 @@
 from websockets.asyncio.server import serve, broadcast, ServerConnection
+from websockets import exceptions
 from blinds.motors_manager import MotorsManager
 import time
 import asyncio
@@ -11,11 +12,10 @@ class WebSocketServer:
         self.connections: set[ServerConnection] = set()
         self.motors_manager = motors_manager
         self.user_password = None
-        self.loop = None
         self.stop_event = asyncio.Event()
 
         # handle password for configuration over web page
-        with open(Path(__file__).parent / "config", "r") as f:
+        with open(Path(__file__).parent / "pass", "r") as f:
             self.user_password = f.readline().rstrip("\n").rstrip("\r")
 
     # web socket callbacks
@@ -141,10 +141,10 @@ class WebSocketServer:
                     self.set_top_position(msg)
                 elif "setLimit" in msg:
                     self.set_limit(msg)
-                elif "getBlindsPosition" in msg:
-                    print("getBlindsPosition")
                 elif "setIgnoreLimits" in msg:
                     self.set_ignore_limits(msg)
+        except exceptions.ConnectionClosedError:
+            print("Client disconnected without sending a close frame.")
         finally:
             self.connections.remove(websocket)
             await websocket.wait_closed()

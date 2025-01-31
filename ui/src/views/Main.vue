@@ -1,8 +1,22 @@
 <template>
-  <b-container fluid class="text-center my-auto" style="height: 100%">
-    <h1>Blinds control</h1>
-    <b-tabs pills align="center" content-class="mt-3" class="mt-3" small>
-      <!-- Text slides with image -->
+  <b-container fluid class="text-center my-auto">
+    <b-row class="connection" :class="connected ? 'success' : 'danger'">
+      <b-col>
+        {{ connected ? 'Connected' : 'Not connected' }}
+      </b-col>
+    </b-row>
+
+    <h2 class="pt-4">Rolety</h2>
+
+    <b-tabs
+      pills
+      align="center"
+      content-class="mt-3"
+      class="mt-3"
+      small
+      nav-class="text-light"
+      active-nav-item-class="font-weight-bold text-uppercase bg-info"
+    >
       <b-tab title="Balcony">
         <b-row>
           <b-col class="text-center">
@@ -12,13 +26,13 @@
               :width="10"
               :height="20"
               :motorId="0"
-              :settings="pass.length > 5"
+              :password="password"
+              :settings="isAuthenticated"
             />
           </b-col>
         </b-row>
       </b-tab>
 
-      <!-- Slides with custom text -->
       <b-tab title="Window">
         <b-row>
           <b-col class="text-center">
@@ -28,54 +42,43 @@
               :width="10"
               :height="11"
               :motorId="1"
-              :settings="pass.length > 5"
+              :password="password"
+              :settings="isAuthenticated"
             />
           </b-col>
         </b-row>
       </b-tab>
-      <b-tab title="Login">
-        <b-row>
-          <b-col mt="5">
-            <div class="form-group">
-              <label for="pass">Password for calibration</label>
-              <b-form-input
-                type="password"
-                placeholder="Enter password..."
-                v-model="pass"
-                id="pass"
-              />
-            </div>
-          </b-col>
-        </b-row>
-      </b-tab>
     </b-tabs>
+    <LoginModal @login:ok="authenticate($event)" />
   </b-container>
 </template>
 
 <script>
 import ws from '@/shared'
 import Window from '@/components/Window'
+import LoginModal from '@/components/LoginModal'
 
 export default {
   name: 'Main',
   components: {
-    Window
+    Window,
+    LoginModal,
   },
   data() {
     return {
       ignoreLimits: 0,
-      pass: '',
-      slide: 0,
-      sliding: null
+      isAuthenticated: false,
+      password: '',
+      connected: false,
     }
   },
   created() {
     ws.onopen = () => {
-      ws.send('getBlindsPosition')
+      this.connected = true
     }
 
-    ws.onmessage = event => {
-      console.log('Response from server: ', event.data)
+    ws.onmessage = (event) => {
+      // console.log('Response from server: ', event.data)
       if (event.data.includes('blindsPosition')) {
         const motorId = parseInt(event.data.split(':')[2])
         const position = parseInt(event.data.split(':')[4])
@@ -88,22 +91,38 @@ export default {
           position,
           target,
           limit,
-          ignoreLimits
+          ignoreLimits,
         })
       }
     }
+
+    ws.onclose = () => {
+      this.connected = false
+    }
   },
   methods: {
-    onSlideStart(slide) {
-      console.log(slide)
-      this.sliding = true
+    authenticate(password) {
+      this.isAuthenticated = true
+      this.password = password
     },
-    onSlideEnd(slide) {
-      console.log(slide)
-      this.sliding = false
-    }
-  }
+  },
 }
 </script>
 
-<style></style>
+<style>
+.connection {
+  text-transform: uppercase;
+}
+
+.connection.success {
+  background-color: #28a745;
+}
+
+.connection.danger {
+  background-color: #dc3545;
+}
+
+.nav-pills .nav-item a {
+  color: #ffffff;
+}
+</style>
