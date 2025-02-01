@@ -13,7 +13,7 @@
     header-border-variant="dark"
     footer-border-variant="dark"
     hide-header-close
-    @ok="onOk($event)"
+    @ok="onOk()"
   >
     <div class="form-group">
       <label for="pass">Enter password to show settings</label>
@@ -34,8 +34,19 @@ import sha256 from 'crypto-js/sha256'
 export default {
   data() {
     return {
-      pass: '',
+      pass: ''
     }
+  },
+  created() {
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        this.$bvModal.hide('login')
+      }
+      if (e.key === 'Enter') {
+        this.onOk()
+        this.$bvModal.hide('login')
+      }
+    })
   },
   methods: {
     focusPassInput() {
@@ -43,8 +54,8 @@ export default {
     },
     onOk() {
       this.$emit('login:ok', sha256(this.pass).toString())
-    },
-  },
+    }
+  }
 }
 </script>
 

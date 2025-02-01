@@ -14,14 +14,15 @@ websocket_server: WebSocketServer | None = None
 adafruit_mqtt_client: AdafruitIOMqttClient | None = None
 
 # threads
-send_motors_position_thread: threading.Thread | None = None
 websocket_thread: threading.Thread | None = None
 adafruit_mqtt_thread: threading.Thread | None = None
+
+stop_requested = False
+
 
 def main() -> None:
     global websocket_server
     global motors_manager
-    global send_motors_position_thread
     global websocket_thread
     global adafruit_mqtt_thread
     GPIO.setmode(GPIO.BCM)
@@ -32,42 +33,38 @@ def main() -> None:
     websocket_server = WebSocketServer(motors_manager)
     adafruit_mqtt_client = AdafruitIOMqttClient(websocket_server)
 
-    send_motors_position_thread = threading.Thread(target=websocket_server.send_motors_position)
     websocket_thread = threading.Thread(target=websocket_server.start_server)
     adafruit_mqtt_thread = threading.Thread(target=adafruit_mqtt_client.run)
 
-    # start sending motors position thread    
-    send_motors_position_thread.start()
+    # start sending motors position thread
     websocket_thread.start()
     adafruit_mqtt_thread.start()
+    motors_manager.start_motor_threads()
 
     # move motors
-    while True:
-        if not motors_manager.move_motors():
-            time.sleep(1)
+    while not stop_requested:
+        websocket_server.send_motors_position()
+        time.sleep(1)
+    
+    print("Main thread stopped")
 
 
 def cleanup() -> None:
     if motors_manager:
-        print('Stopping motors...')
-        motors_manager.stop_motors()
+        print("Stopping motor threads...")
+        motors_manager.stop_motor_threads()
 
     if adafruit_mqtt_thread and adafruit_mqtt_client:
-        print('Stopping mqtt...')
+        print("Stopping mqtt...")
         adafruit_mqtt_client.stop()
         adafruit_mqtt_thread.join()
 
     if websocket_server and websocket_thread:
-        print('Stopping ws server...')
+        print("Stopping ws server...")
         websocket_server.stop_server()
-    
-        if send_motors_position_thread:
-            print('Stopping motors position thread...')
-            send_motors_position_thread.join()
-
         websocket_thread.join()
 
-    print('Cleaning up GPIO')
+    print("Cleaning up GPIO")
     GPIO.cleanup()
 
 
@@ -76,5 +73,6 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Interrupted")
+        stop_requested = True
     finally:
         cleanup()

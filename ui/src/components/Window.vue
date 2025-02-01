@@ -1,7 +1,7 @@
 <template>
   <b-container fluid>
-    <b-row>
-      <b-col class="my-auto controls">
+    <b-row align-v="center">
+      <b-col class="controls">
         <b-button-group vertical>
           <b-button variant="light" @click="up()" size="sm">
             <b-icon icon="chevron-up"></b-icon>
@@ -25,6 +25,7 @@
           size="sm"
           variant="warning"
           @click="setTopPosition()"
+          class="align-button"
           v-if="settings"
         >
           <b-icon icon="align-top"></b-icon> SET TOP
@@ -44,6 +45,7 @@
         </div>
         <b-button
           size="sm"
+          class="align-button"
           variant="warning"
           @click="setLimit()"
           v-if="settings"
@@ -52,40 +54,65 @@
         </b-button>
       </b-col>
 
-      <b-col class="my-auto controls">
+      <b-col class="controls">
         <b-button-group vertical>
-          <b-button variant="light" @click="openBlind(0)" size="sm">
+          <b-button variant="light" @click="openBlind()" size="sm">
             <b-icon icon="chevron-bar-up"></b-icon>
           </b-button>
           <div class="spacer"></div>
-          <b-button variant="light" @click="closeBlind(0)" size="sm">
+          <b-button variant="light" @click="closeBlind()" size="sm">
             <b-icon icon="chevron-bar-down"></b-icon>
           </b-button>
         </b-button-group>
       </b-col>
     </b-row>
 
-    <div class="w-100 mt-2" v-if="settings">
-      Position: <b-badge>{{ position }}</b-badge>
-    </div>
-    <div class="w-100 mt-1" v-if="settings">
-      Target: <b-badge>{{ target }}</b-badge>
-    </div>
+    <b-container class="text-center align-button">
+      <b-row class="mt-2" v-if="settings">
+        <b-col class="text-left p-0">
+          Position
+        </b-col>
+        <b-col class="text-right p-0">
+          <b-badge>{{ position }}</b-badge>
+        </b-col>
+      </b-row>
+      <b-row class="my-1" v-if="settings">
+        <b-col class="text-left p-0">
+          Target
+        </b-col>
+        <b-col class="text-right p-0">
+          <b-badge>{{ target }}</b-badge>
+        </b-col>
+      </b-row>
+      <b-row class="mt-1 mb-3" v-if="settings">
+        <b-col class="text-left p-0">
+          Limit
+        </b-col>
+        <b-col class="text-right p-0">
+          <b-badge>{{ limit }}</b-badge>
+        </b-col>
+      </b-row>
+    </b-container>
 
-    <div class="w-100 mt-2">
+    <div class="mt-2">
       <b-button
         v-if="settings"
+        class="align-button"
         :variant="ignoreLimits != 0 ? 'danger' : 'success'"
         @click="setIgnoreLimits()"
         size="sm"
       >
-        <b-icon :icon="ignoreLimits != 0 ? 'check-square' : 'square'"></b-icon>
-        Ignore limits
+        IGNORE LIMITS: {{ ignoreLimits == 0 ? 'NO' : 'YES' }}
       </b-button>
     </div>
 
-    <div class="w-100 mt-3">
-      <b-button variant="light" @click="openLogin()" size="sm">
+    <div class="mt-3">
+      <b-button
+        class="align-button"
+        variant="light"
+        @click="openLogin()"
+        size="sm"
+      >
         <b-icon icon="gear-fill"></b-icon> Settings
       </b-button>
     </div>
@@ -100,28 +127,28 @@ export default {
   props: {
     name: {
       type: String,
-      default: 'Window',
+      default: 'Window'
     },
     width: {
       type: Number,
-      default: 10,
+      default: 10
     },
     height: {
       type: Number,
-      default: 10,
+      default: 10
     },
     motorId: {
       type: Number,
-      default: 0,
+      default: 0
     },
     settings: {
       type: Boolean,
-      default: false,
+      default: false
     },
     password: {
       type: String,
-      default: '',
-    },
+      default: ''
+    }
   },
   data() {
     return {
@@ -129,7 +156,7 @@ export default {
       target: 0,
       limit: 0,
       ignoreLimits: 0,
-      minMotorStep: 5000,
+      minMotorStep: 5000
     }
   },
   methods: {
@@ -186,8 +213,8 @@ export default {
     },
     openLogin() {
       this.$bvModal.show('login')
-    },
-  },
+    }
+  }
 }
 </script>
 
@@ -238,6 +265,10 @@ export default {
 
 .spacer {
   border-bottom: 2px solid var(--bg-color);
+}
+
+.align-button {
+  width: 10rem;
 }
 
 @keyframes blinker {

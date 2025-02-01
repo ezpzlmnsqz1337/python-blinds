@@ -22,15 +22,16 @@ class StepperMotor:
         self.disabled = True
         self.ignore_limits = False
 
-        self.step_map = (self.step1,
-                        self.step2,
-                        self.step3,
-                        self.step4,
-                        self.step5,
-                        self.step6,
-                        self.step7,
-                        self.step8,
-                        )
+        self.step_map = (
+            self.step1,
+            self.step2,
+            self.step3,
+            self.step4,
+            self.step5,
+            self.step6,
+            self.step7,
+            self.step8,
+        )
         self.current_step = 0
         self.elapsed_steps = 0
         self.step_pause = 0.002
@@ -91,7 +92,7 @@ class StepperMotor:
                 self.step_CW()
             else:
                 self.step_CCW()
-        
+
         if self.elapsed_steps != 0 and self.elapsed_steps % 200 == 0:
             if self.step_pause - 0.0001 > 0.0004:
                 self.step_pause -= 0.0001
@@ -113,8 +114,9 @@ class StepperMotor:
         self.elapsed_steps += 1
 
     def step_CCW(self):
-        self.current_step = self.current_step - \
-            1 if self.current_step > 0 else (len(self.step_map) - 1)
+        self.current_step = (
+            self.current_step - 1 if self.current_step > 0 else (len(self.step_map) - 1)
+        )
         self.step_map[self.current_step]()
         self.position += 1 if self.invert_dir else -1
         self.elapsed_steps += 1
@@ -166,4 +168,3 @@ class StepperMotor:
         GPIO.output(self.pin1, GPIO.LOW)
         GPIO.output(self.pin2, GPIO.LOW)
         GPIO.output(self.pin3, GPIO.HIGH)
-

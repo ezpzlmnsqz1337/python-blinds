@@ -1,56 +1,62 @@
 from blinds.stepper_motor import StepperMotor
 from pathlib import Path
+import threading
 import time
+
+
 class MotorsManager:
     def __init__(self, motors: list[StepperMotor]) -> None:
         self.motors = motors
-        self.config_path = Path(__file__).parent / "config"
+        self.motor_threads: list[threading.Thread] = []
+        self.stop_requested = False
         # disable motors
-        for m in self.motors:
-            m.disable()
+        [m.disable() for m in self.motors]
+        # load motor configuration
+        [self.load_config(m) for m in self.motors]
+
         # invert direction of first motor
         motors[0].invert_direction(True)
-        # load motors cofiguration
-        self.load_config()
-
 
     def get_motor(self, index: int) -> StepperMotor:
         return self.motors[index]
-    
+
     def get_motors(self) -> list[StepperMotor]:
         return self.motors
-  
-    def load_config(self) -> None:
-        with open(self.config_path, "r") as f:
-            for m in self.motors:
-                m.set_position(int(f.readline()))
-                m.set_target_position(m.get_position())
-                m.set_limit(int(f.readline()))
 
+    def load_config(self, motor: StepperMotor) -> None:
+        with open(Path(__file__).parent / f"config_m{motor.id}", "r") as f:
+            motor.set_position(int(f.readline()))
+            motor.set_target_position(motor.get_position())
+            motor.set_limit(int(f.readline()))
 
-    def save_config(self) -> None:
-        with open(self.config_path, "w") as f:
-            for m in self.motors:
-                f.write(f"{m.get_target_position()}\n")
-                f.write(f"{m.get_limit()}\n")
-    
-    
-    def move_motors(self) -> bool:
-        moving = False
-        m1_moving = self.motors[0].move()
-        m2_moving = self.motors[1].move()
-        step_pause = self.motors[0].step_pause
-        if m1_moving or m2_moving:
-            moving = True
-        if m1_moving:
-            step_pause = self.motors[0].step_pause
-        if m2_moving:
-            step_pause = self.motors[1].step_pause
-        if m1_moving and m2_moving:
-            step_pause = max(self.motors[0].step_pause, self.motors[1].step_pause)
-        time.sleep(step_pause)
-        return moving
-    
-    def stop_motors(self) -> None:
+    def save_config(self, motor: StepperMotor) -> None:
+        with open(Path(__file__).parent / f"config_m{motor.id}", "w") as f:
+            f.write(f"{motor.get_position()}\n")
+            f.write(f"{motor.get_limit()}\n")
+
+    def stop_motor_threads(self) -> None:
         for m in self.motors:
+            m.set_target_position(m.get_position())
             m.disable()
+            # stops the threads
+            self.stop_requested = True
+        # join their threads
+        [t.join() for t in self.motor_threads]
+        self.motor_threads.clear()
+        self.stop_requested = False
+
+    def move_motor(self, motor: StepperMotor) -> None:
+        moving = False
+        while not self.stop_requested:
+            if motor.move() != moving:
+                moving = not moving
+                if not moving:
+                    self.save_config(motor)
+            time.sleep(motor.step_pause)
+
+    def start_motor_threads(self) -> None:
+        self.stop_motor_threads()
+        for m in self.motors:
+            t = threading.Thread(target=self.move_motor, args=(m,))
+            t.start()
+            self.motor_threads.append(t)

@@ -6,13 +6,13 @@
       </b-col>
     </b-row>
 
-    <h2 class="pt-4">Rolety</h2>
+    <h2 class="pt-2">Rolety</h2>
 
     <b-tabs
       pills
       align="center"
       content-class="mt-3"
-      class="mt-3"
+      class="mt-2"
       small
       nav-class="text-light"
       active-nav-item-class="font-weight-bold text-uppercase bg-info"
@@ -62,14 +62,14 @@ export default {
   name: 'Main',
   components: {
     Window,
-    LoginModal,
+    LoginModal
   },
   data() {
     return {
       ignoreLimits: 0,
       isAuthenticated: false,
       password: '',
-      connected: false,
+      connected: false
     }
   },
   created() {
@@ -77,7 +77,7 @@ export default {
       this.connected = true
     }
 
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       // console.log('Response from server: ', event.data)
       if (event.data.includes('blindsPosition')) {
         const motorId = parseInt(event.data.split(':')[2])
@@ -91,7 +91,7 @@ export default {
           position,
           target,
           limit,
-          ignoreLimits,
+          ignoreLimits
         })
       }
     }
@@ -104,8 +104,8 @@ export default {
     authenticate(password) {
       this.isAuthenticated = true
       this.password = password
-    },
-  },
+    }
+  }
 }
 </script>
 

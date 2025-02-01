@@ -1,10 +1,10 @@
 from websockets.asyncio.server import serve, broadcast, ServerConnection
 from websockets import exceptions
 from blinds.motors_manager import MotorsManager
-import time
 import asyncio
 from websockets.asyncio.server import serve
 from pathlib import Path
+
 
 class WebSocketServer:
 
@@ -28,8 +28,7 @@ class WebSocketServer:
         target = motor.get_target_position() - steps
         motor.set_target_position(target)
         broadcast(self.connections, f"motor:{index}:goto:{target} ")
-        self.motors_manager.save_config()
-
+        self.motors_manager.save_config(motor)
 
     def go_down(self, msg: str) -> None:
         index = int(msg.split(":")[1])
@@ -38,8 +37,7 @@ class WebSocketServer:
         target = motor.get_target_position() + steps
         motor.set_target_position(target)
         broadcast(self.connections, f"motor:{index}:go to: {target}")
-        self.motors_manager.save_config()
-
+        self.motors_manager.save_config(motor)
 
     def stop(self, msg: str) -> None:
         index = int(msg.split(":")[1])
@@ -47,38 +45,35 @@ class WebSocketServer:
         motor.set_target_position(motor.get_position())
         motor.disable()
         broadcast(self.connections, f"motor:{index}, stop")
-        self.motors_manager.save_config()
-
+        self.motors_manager.save_config(motor)
 
     def close_blinds(self) -> None:
         for m in self.motors_manager.get_motors():
             m.set_target_position(m.get_limit())
             broadcast(self.connections, f"motors, close, limit: {m.get_limit()} ")
-        self.motors_manager.save_config()
-
+            self.motors_manager.save_config(m)
 
     def open_blinds(self) -> None:
         for m in self.motors_manager.get_motors():
             m.set_target_position(0)
             broadcast(self.connections, f"motors: open, bottom limit: 0 ")
-        self.motors_manager.save_config()
-
+            self.motors_manager.save_config(m)
 
     def close_blind(self, msg: str) -> None:
         index = int(msg.split(":")[1])
         motor = self.motors_manager.get_motor(index)
         motor.set_target_position(motor.get_limit())
-        broadcast(self.connections, f"motor: {index}, close, limit: {motor.get_limit()} ")
-        self.motors_manager.save_config()
-
+        broadcast(
+            self.connections, f"motor: {index}, close, limit: {motor.get_limit()} "
+        )
+        self.motors_manager.save_config(motor)
 
     def open_blind(self, msg: str) -> None:
         index = int(msg.split(":")[1])
         motor = self.motors_manager.get_motor(index)
         motor.set_target_position(0)
         broadcast(self.connections, f"motor: {index}, open, bottom limit: 0 ")
-        self.motors_manager.save_config()
-
+        self.motors_manager.save_config(motor)
 
     def set_top_position(self, msg: str) -> None:
         password = msg.split(":")[2]
@@ -86,9 +81,11 @@ class WebSocketServer:
             index = int(msg.split(":")[1])
             motor = self.motors_manager.get_motor(index)
             motor.set_top_position()
-            broadcast(self.connections, f"setTopPosition:motor:{index}:position:{motor.get_position()}")
-            self.motors_manager.save_config()
-
+            broadcast(
+                self.connections,
+                f"setTopPosition:motor:{index}:position:{motor.get_position()}",
+            )
+            self.motors_manager.save_config(motor)
 
     def set_limit(self, msg: str) -> None:
         password = msg.split(":")[2]
@@ -96,9 +93,11 @@ class WebSocketServer:
             index = int(msg.split(":")[1])
             motor = self.motors_manager.get_motor(index)
             motor.set_limit(motor.get_target_position())
-            broadcast(self.connections, f"setLimit:motor:{index}:position:{motor.get_position()}")
-            self.motors_manager.save_config()
-
+            broadcast(
+                self.connections,
+                f"setLimit:motor:{index}:position:{motor.get_position()}",
+            )
+            self.motors_manager.save_config(motor)
 
     def set_ignore_limits(self, msg: str) -> None:
         password = msg.split(":")[2]
@@ -110,11 +109,12 @@ class WebSocketServer:
             broadcast(self.connections, f"setIgnoreLimits:{ignore_limits}")
 
     def send_motors_position(self) -> None:
-        while self.stop_event.is_set() == False:
-            for i, m in enumerate(self.motors_manager.get_motors()):
-                ignore = 1 if m.get_ignore_limits() == True else 0
-                broadcast(self.connections, f"blindsPosition:motor:{i}:position:{m.get_position()}:target:{m.get_target_position()}:limit:{m.get_limit()}:ignoreLimit:{ignore}")
-            time.sleep(1)
+        for i, m in enumerate(self.motors_manager.get_motors()):
+            ignore = 1 if m.get_ignore_limits() == True else 0
+            broadcast(
+                self.connections,
+                f"blindsPosition:motor:{i}:position:{m.get_position()}:target:{m.get_target_position()}:limit:{m.get_limit()}:ignoreLimit:{ignore}",
+            )
 
     async def on_ws_message(self, websocket: ServerConnection) -> None:
         self.connections.add(websocket)
@@ -148,13 +148,13 @@ class WebSocketServer:
         finally:
             self.connections.remove(websocket)
             await websocket.wait_closed()
-    
+
     async def run_ws_server(self):
         async with serve(self.on_ws_message, "", 8082):
             await self.stop_event.wait()
-    
+
     def start_server(self):
         asyncio.run(self.run_ws_server())
-    
+
     def stop_server(self):
         self.stop_event.set()
