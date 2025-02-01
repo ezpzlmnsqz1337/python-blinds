@@ -25,3 +25,16 @@ Contains sha256 hash of the password to be used to access settings in the web in
 ```
 19e955dc99d019d6eee950c5538c1c48c7e7316453831c9e7a02be2b6c1edd07
 ```
+
+# Installation
+- to install python dependencies run `pip install -r requirements.txt` in the `blinds` directory
+- to install UI dependencies run `npm install` in the `ui` directory (requires node 14)
+- to build the UI run `npm run build` in the `ui` directory
+- to install web server dependencies run `npm install` in the `webserver` directory (requires node 14)
+- to build the webserver run `npm run build` in the `webserver` directory
+- to upload everything to the device via SSH create file `ssh-credentials` in the root directory with the following content:
+```bash
+export USER=<your_username>
+export DESTINATION=<ssh_destination>
+```
+- and run `./upload.sh` in the root directory

@@ -1,5 +1,3 @@
-.vscode
-.micropy
-old
 .mypy*
-upload.sh
+.vscode
+ssh-credentials

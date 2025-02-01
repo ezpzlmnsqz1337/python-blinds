@@ -1,0 +1,12 @@
+asyncio==3.4.3
+black==25.1.0
+click==8.1.8
+colorama==0.4.6
+mypy-extensions==1.0.0
+packaging==24.2
+paho-mqtt==2.1.0
+pathspec==0.12.1
+platformdirs==4.3.6
+tomli==2.2.1
+typing_extensions==4.12.2
+websockets==14.2

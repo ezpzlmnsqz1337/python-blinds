@@ -1,0 +1,13 @@
+[Unit]
+Description=Python Blinds Webserver Service
+After=network.target
+
+[Service]
+Type=idle
+Restart=on-failure
+User=root
+WorkingDirectory=/home/mazelpico/workspace/python-blinds/webserver
+ExecStart=/home/mazelpico/.nvm/versions/node/v18.20.6/bin/node index.js > output.log 2> error.log
+
+[Install]
+WantedBy=multi-user.target
