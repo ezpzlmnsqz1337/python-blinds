@@ -5,18 +5,26 @@
 # username, and feed to subscribe to for changes.
 
 # Import standard python modules.
-import sys
 import time
+import logging
+import ssl
+from typing import Any
 from io import TextIOWrapper
 import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessage
 from pathlib import Path
 from blinds.websocket_server import WebSocketServer
+
+logger = logging.getLogger(__name__)
 
 
 class AdafruitIOMqttClient:
     def __init__(self, websocket_server: WebSocketServer) -> None:
         self.websocket_server = websocket_server
         self.stop_requested = False
+        self.client = None
+        self.reconnect_delay = 5  # seconds
+        self.max_reconnect_delay = 300  # 5 minutes
 
         with open(Path(__file__).parent / "adaconfig", "r") as f:
             self.adafruit_io_url = self.readLineFromFileAsBytes(f)
@@ -27,63 +35,103 @@ class AdafruitIOMqttClient:
     def readLineFromFileAsBytes(self, file: TextIOWrapper):
         return file.readline().rstrip("\n").rstrip("\r")
 
-    def connected(self, client: mqtt.Client, userdata, flags_dict, result):
-        print(
-            "Connected to Adafruit IO!  Listening for {0} changes...".format(
+    def connected(self, client: mqtt.Client, userdata: Any, flags_dict: Any, result: int) -> None:
+        if result == 0:
+            logger.info(
+                "Connected to Adafruit IO!  Listening for %s changes...",
                 self.adafruit_io_feedname
             )
-        )
-        client.subscribe(
-            "{0}/feeds/{1}".format(
-                self.adafruit_io_username, self.adafruit_io_feedname
-            ),
-            0,
-        )
-
-    def subscribed(self, client: mqtt.Client, userdata, mid, granted_qos):
-        print(
-            "Subscribed to {0} with QoS {1}".format(
-                self.adafruit_io_feedname, granted_qos[0]
+            # Reset reconnect delay on successful connection
+            self.reconnect_delay = 5
+            client.subscribe(
+                "{0}/feeds/{1}".format(
+                    self.adafruit_io_username, self.adafruit_io_feedname
+                ),
+                0,
             )
+        else:
+            logger.error("Failed to connect to Adafruit IO, result code: %d", result)
+
+    def subscribed(self, client: mqtt.Client, userdata: Any, mid: int, granted_qos: Any) -> None:
+        logger.info(
+            "Subscribed to %s with QoS %d",
+            self.adafruit_io_feedname, granted_qos[0]
         )
 
-    def disconnected(self, client: mqtt.Client, userdata, rc):
-        print("Disconnected from Adafruit IO!")
-        sys.exit(1)
-
-    def message(self, client: mqtt.Client, userdata, message):
-        print(
-            "Feed {0} received new value: {1}".format(
-                message.topic, message.payload.decode("utf-8")
+    def disconnected(self, client: mqtt.Client, userdata: Any, rc: int) -> None:
+        if rc != 0:
+            logger.warning(
+                "Unexpectedly disconnected from Adafruit IO! Return code: %d. Will attempt to reconnect...", 
+                rc
             )
-        )
-        msg = message.payload.decode("utf-8")
-        if msg == "OPEN":
-            self.websocket_server.open_blinds()
-        elif msg == "CLOSE":
-            self.websocket_server.close_blinds()
+        else:
+            logger.info("Disconnected from Adafruit IO (clean disconnect)")
+
+    def message(self, client: mqtt.Client, userdata: Any, message: MQTTMessage) -> None:
+        try:
+            msg = message.payload.decode("utf-8")
+            logger.info(
+                "Feed %s received new value: %s",
+                message.topic, msg
+            )
+            if msg == "OPEN":
+                self.websocket_server.open_blinds()
+            elif msg == "CLOSE":
+                self.websocket_server.close_blinds()
+        except Exception as e:
+            logger.error("Error processing message: %s", e, exc_info=True)
 
     def run(self):
-        print(f"Started Adafruit IO: {self.adafruit_io_url}")
-        client = mqtt.Client()
-        client.tls_set_context()
-        client.username_pw_set(self.adafruit_io_username, self.adafruit_io_key)
+        logger.info("Started Adafruit IO MQTT client: %s", self.adafruit_io_url)
+        self.client = mqtt.Client()
+        ssl_context = ssl.create_default_context()
+        self.client.tls_set_context(ssl_context)  # type: ignore
+        self.client.username_pw_set(self.adafruit_io_username, self.adafruit_io_key)
 
-        client.on_connect = self.connected
-        client.on_disconnect = self.disconnected
-        client.on_message = self.message
-        client.on_subscribe = self.subscribed
+        self.client.on_connect = self.connected
+        self.client.on_disconnect = self.disconnected
+        self.client.on_message = self.message
+        self.client.on_subscribe = self.subscribed
 
-        print(f"Connecting to Adafruit IO: {self.adafruit_io_url}")
-        client.connect(self.adafruit_io_url, 8883, 60)
-
-        client.loop_start()
+        # Enable automatic reconnection
+        self.client.reconnect_delay_set(min_delay=1, max_delay=120)
 
         while not self.stop_requested:
-            time.sleep(1)
-            pass
+            try:
+                logger.info("Connecting to Adafruit IO: %s", self.adafruit_io_url)
+                self.client.connect(self.adafruit_io_url, 8883, 60)
+                self.client.loop_forever()  # Blocks and handles reconnection automatically
+                
+                # If we get here, connection was lost and loop_forever returned
+                if not self.stop_requested:
+                    logger.warning(
+                        "Connection lost. Reconnecting in %s seconds...", 
+                        self.reconnect_delay
+                    )
+                    time.sleep(self.reconnect_delay)
+                    # Exponential backoff
+                    self.reconnect_delay = min(
+                        self.reconnect_delay * 2, 
+                        self.max_reconnect_delay
+                    )
+            except Exception as e:
+                if not self.stop_requested:
+                    logger.error(
+                        "Error connecting to Adafruit IO: %s. Retrying in %s seconds...",
+                        e, self.reconnect_delay, exc_info=True
+                    )
+                    time.sleep(self.reconnect_delay)
+                    self.reconnect_delay = min(
+                        self.reconnect_delay * 2, 
+                        self.max_reconnect_delay
+                    )
 
-        client.loop_stop()
+        if self.client:
+            self.client.loop_stop()
+            self.client.disconnect()
 
     def stop(self):
+        logger.info("Stopping Adafruit MQTT client...")
         self.stop_requested = True
+        if self.client:
+            self.client.disconnect()
