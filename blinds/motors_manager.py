@@ -78,12 +78,24 @@ class MotorsManager:
 
     def move_motor(self, motor: StepperMotor) -> None:
         moving = False
+        next_step_at = time.monotonic()
         while not self.stop_requested:
-            if motor.move() != moving:
+            is_moving = motor.move()
+            if is_moving != moving:
                 moving = not moving
                 if not moving:
                     self.save_config(motor)
-            time.sleep(motor.step_pause)
+
+            if moving:
+                next_step_at += motor.step_pause
+                sleep_for = next_step_at - time.monotonic()
+                if sleep_for > 0:
+                    time.sleep(sleep_for)
+                else:
+                    next_step_at = time.monotonic()
+            else:
+                next_step_at = time.monotonic()
+                time.sleep(motor.IDLE_STEP_DELAY)
 
     def start_motor_threads(self) -> None:
         self.stop_motor_threads()

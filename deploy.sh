@@ -20,6 +20,7 @@ scp -r blinds/*.py $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
 
 echo -e "${BLUE}📄 Copying Python project files...${NC}"
 scp -r blinds/pyproject.toml $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
+scp -r blinds/README.md $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
 scp -r blinds/uv.lock $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
 
 echo -e "${BLUE}📦 Copying python webserver and ui files...${NC}"
@@ -43,6 +44,9 @@ ssh -t $USER@$DESTINATION "sudo systemctl daemon-reload" > /dev/null 2>&1 && ech
 
 echo -e "${BLUE}🛠️  Ensuring uv is installed on the target...${NC}"
 ssh -t $USER@$DESTINATION "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh" > /dev/null 2>&1 && echo -e "${GREEN}✅ uv is available${NC}"
+
+echo -e "${BLUE}🐷 Enabling pigpiod on the target...${NC}"
+ssh -t $USER@$DESTINATION "sudo systemctl enable pigpiod.service && sudo systemctl restart pigpiod.service" > /dev/null 2>&1 && echo -e "${GREEN}✅ pigpiod is running${NC}"
 
 echo -e "${BLUE}🐍 Syncing Python dependencies with uv...${NC}"
 ssh -t $USER@$DESTINATION "export PATH=\"\$HOME/.local/bin:\$PATH\" && cd /home/$USER/workspace/python-blinds && uv sync --project blinds --locked --no-dev" > /dev/null 2>&1 && echo -e "${GREEN}✅ Python dependencies synced${NC}"

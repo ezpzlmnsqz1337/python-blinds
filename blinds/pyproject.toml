@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "paho-mqtt>=2.1.0,<3",
+    "pigpio>=1.78,<2",
     "websockets>=14.2,<15",
     "RPi.GPIO>=0.7.1; platform_machine == 'armv6l' or platform_machine == 'armv7l' or platform_machine == 'aarch64'",
 ]
@@ -17,7 +18,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "black>=25.1.0,<26",
+    "matplotlib>=3.10.9",
     "mypy>=2.1.0",
+    "pytest>=9.0.3",
     "ruff>=0.15.14",
     "types-pysocks>=1.7.1.20260518",
     "types-rpi-gpio>=0.7.0.20260508",

@@ -3,9 +3,8 @@ import sys
 import threading
 import time
 
-import RPi.GPIO as GPIO  # pyright: ignore[reportMissingImports, reportMissingModuleSource, reportMissingTypeStubs]
-
 from blinds.adafruit_mqtt import AdafruitIOMqttClient
+from blinds.gpio_backend import get_gpio_backend
 from blinds.http_server import HttpServer
 from blinds.motors_manager import MotorsManager
 from blinds.stepper_motor import StepperMotor
@@ -45,7 +44,7 @@ def main() -> None:
     global adafruit_mqtt_thread
 
     logger.info("Starting Python Blinds Service...")
-    GPIO.setmode(GPIO.BCM)
+    get_gpio_backend()
 
     # motors settings
     motors = [StepperMotor(5, 6, 13, 19, 0), StepperMotor(23, 24, 25, 8, 1)]
@@ -97,7 +96,7 @@ def cleanup() -> None:
         websocket_thread.join()
 
     logger.info("Cleaning up GPIO")
-    GPIO.cleanup()
+    get_gpio_backend().cleanup()
     logger.info("Cleanup complete")
 
 
