@@ -18,6 +18,10 @@ sed -i "s/<username>/$USER/g" python-blinds-webserver.service
 echo -e "${BLUE}📁 Copying python files...${NC}"
 scp -r blinds/*.py $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
 
+echo -e "${BLUE}📄 Copying Python project files...${NC}"
+scp -r blinds/pyproject.toml $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
+scp -r blinds/uv.lock $USER@$DESTINATION:/home/$USER/workspace/python-blinds/blinds
+
 echo -e "${BLUE}📦 Copying python webserver and ui files...${NC}"
 scp -r webserver/dist/index.js $USER@$DESTINATION:/home/$USER/workspace/python-blinds/webserver/index.js
 scp -r ui/dist/* $USER@$DESTINATION:/home/$USER/workspace/python-blinds/webserver/ui
@@ -36,6 +40,9 @@ ssh -t $USER@$DESTINATION "sudo chmod 644 /lib/systemd/system/python-blinds-webs
 
 echo -e "${BLUE}🔃 Restarting systemd...${NC}"
 ssh -t $USER@$DESTINATION "sudo systemctl daemon-reload" > /dev/null 2>&1 && echo -e "${GREEN}✅ systemd daemon reloaded${NC}"
+
+echo -e "${BLUE}🐍 Syncing Python dependencies with uv...${NC}"
+ssh -t $USER@$DESTINATION "cd /home/$USER/workspace/python-blinds && uv sync --project blinds --locked --no-dev" > /dev/null 2>&1 && echo -e "${GREEN}✅ Python dependencies synced${NC}"
 
 echo -e "${BLUE}▶️  Enabling python-blinds service and restart it...${NC}"
 ssh -t $USER@$DESTINATION "sudo systemctl enable python-blinds.service" > /dev/null 2>&1 && echo -e "${GREEN}✅ python-blinds.service enabled${NC}"

@@ -4,6 +4,4 @@ dev-requirements.txt
 micropy.json
 pass
 adaconfig
-Include
-Scripts
-Lib
+.venv/

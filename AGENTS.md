@@ -21,7 +21,14 @@ ui/              Vue.js — web UI for manual control and calibration
 
 ### `blinds/` (Python)
 
-Runs as a systemd service (`python-blinds.service`) under the venv at `blinds/bin/python3`.
+Runs as a systemd service via the `uv` project in `blinds/`, executed as `uv run --project blinds -m blinds` from the repository root.
+
+**Python workflow:**
+- Use `uv` for all Python work in this repo.
+- Treat `blinds/` as the only Python project.
+- Prefer `cd blinds && uv sync` to install dependencies.
+- Prefer `uv run --project blinds ...` for Python commands, scripts, formatting, and checks.
+- Prefer `uv add ...` / `uv remove ...` when changing Python dependencies instead of editing lock state by hand.
 
 | File | Purpose |
 |---|---|
@@ -92,6 +99,7 @@ Web interface for manual control and calibration. Connects directly to the WebSo
 - SSH target: `mazelpico@pizero2` (credentials in `ssh-credentials`)
 - Builds are expected to already be compiled (`webserver/dist/index.js`, `ui/dist/`)
 - Copies Python files, built JS bundle, and systemd service files to the Pi
+- Copies `blinds/pyproject.toml` and `blinds/uv.lock` to the Pi and runs `uv sync --project blinds --locked --no-dev`
 - Installs services to `/lib/systemd/system/`, reloads daemon, restarts both services
 
 **Useful commands on the Pi:**

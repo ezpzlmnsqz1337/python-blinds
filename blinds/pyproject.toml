@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "python-blinds"
+version = "0.1.0"
+description = "Raspberry Pi blinds controller with WebSocket, HTTP, and MQTT integrations"
+readme = "../README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "paho-mqtt>=2.1.0,<3",
+    "websockets>=14.2,<15",
+    "RPi.GPIO>=0.7.1; platform_machine == 'armv6l' or platform_machine == 'armv7l' or platform_machine == 'aarch64'",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0,<26",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

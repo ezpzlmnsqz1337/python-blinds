@@ -29,7 +29,8 @@ Contains sha256 hash of the password to be used to access settings in the web in
 ```
 
 ## Installation
-- to install python dependencies run `pip install -r requirements.txt` in the `blinds` directory
+- install `uv` and run `cd blinds && uv sync --no-dev`
+- use `uv run --project blinds -m blinds` from the repository root to start the Python service locally
 - to install UI dependencies run `npm install` in the `ui` directory (requires Node 14–16; vue-cli-service v4 breaks on Node 17+)
 - to build the UI run `npm run build` in the `ui` directory
 - to install web server dependencies run `npm install` in the `webserver` directory
@@ -61,6 +62,7 @@ Two systemd services run on the Pi:
 - `python-blinds-webserver.service` — Node.js web UI server (port 3000)
 
 ```bash
+uv run --project blinds -m blinds
 sudo systemctl status python-blinds.service
 sudo systemctl restart python-blinds.service
 sudo journalctl -u python-blinds.service -f
