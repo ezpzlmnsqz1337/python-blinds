@@ -14,8 +14,7 @@
 ## Software Architecture
 
 ```
-blinds/          Python package — motor control + WebSocket server
-webserver/       Node.js/Express — serves the web UI + HTTP endpoints for HA
+blinds/          Python package — motor control + WebSocket + HTTP server
 ui/              Vue.js — web UI for manual control and calibration
 ```
 
@@ -37,7 +36,7 @@ Runs as a systemd service from `blinds/.venv/bin/python -m blinds`. The virtuale
 | `stepper_motor.py` | Low-level stepper motor driver. Tracks position, target, limit, step sequence. Enforces 0–limit bounds unless `ignore_limits` is set. |
 | `motors_manager.py` | Manages both motors. Runs each motor in its own thread. Persists position/limit to `config_m0` / `config_m1` on every move completion. |
 | `websocket_server.py` | asyncio WebSocket server on **port 8082**. Handles all control messages from UI clients. |
-| `http_server.py` | Minimal HTTP server on **port 8083**. Exposes `/open` and `/close` for Home Assistant. Toggle logic lives here: if motors moving → stop all; otherwise open/close all. No new dependencies (stdlib `http.server`). |
+| `http_server.py` | Minimal HTTP server on **port 3000**. Serves the built UI from `ui/dist/` and exposes `/open` and `/close` for Home Assistant. Toggle logic lives here: if motors moving → stop all; otherwise open/close all. No new dependencies (stdlib `http.server`). |
 | `adafruit_mqtt.py` | MQTT client connecting to Adafruit IO. Listens to a feed; reacts to `OPEN` / `CLOSE` string values (Google Assistant integration, to be replaced with Home Assistant voice). |
 
 **WebSocket message protocol** (sent by UI clients):
@@ -72,24 +71,9 @@ blindsPosition:motor:<i>:position:<pos>:target:<target>:limit:<limit>:ignoreLimi
 
 Re-calibration is occasionally needed due to occasional step loss.
 
-### `webserver/` (Node.js)
-
-Runs as a systemd service (`python-blinds-webserver.service`) on **port 3000**.
-
-Serves the built Vue UI from `webserver/ui/` (populated by `deploy.sh` from `ui/dist/`).
-
-Also exposes HTTP endpoints for **Home Assistant** (IKEA BILRESA 2-button switch):
-
-| Endpoint | Behaviour |
-|---|---|
-| `GET /open` | If blinds are moving → stop all. Otherwise → open all. |
-| `GET /close` | If blinds are moving → stop all. Otherwise → close all. |
-
-Each request opens a short-lived WebSocket connection to port 8082, reads one `blindsPosition` broadcast to determine movement state, sends the appropriate command, then disconnects immediately (avoids keeping a persistent connection that would trigger continuous position broadcasts while motors are running).
-
 ### `ui/` (Vue.js)
 
-Web interface for manual control and calibration. Connects directly to the WebSocket server on port 8082.
+Web interface for manual control and calibration. Served by the Python HTTP server on port 3000 and connects directly to the WebSocket server on port 8082.
 
 ## Deployment
 
@@ -98,15 +82,14 @@ Web interface for manual control and calibration. Connects directly to the WebSo
 ```
 
 - SSH target: `mazelpico@pizero2` (credentials in `ssh-credentials`)
-- Builds are expected to already be compiled (`webserver/dist/index.js`, `ui/dist/`)
-- Copies Python files, built JS bundle, and systemd service files to the Pi
+- Builds are expected to already be compiled (`ui/dist/`)
+- Copies Python files, built UI assets, and the Python service file to the Pi
 - Copies `blinds/pyproject.toml` and `blinds/uv.lock` to the Pi, bootstraps `uv` if missing, and runs `uv sync --project blinds --locked --no-dev`
-- Installs services to `/lib/systemd/system/`, reloads daemon, restarts both services
+- Installs the Python service to `/lib/systemd/system/`, reloads daemon, and restarts it
 
 **Useful commands on the Pi:**
 ```bash
 sudo systemctl status python-blinds.service
-sudo systemctl status python-blinds-webserver.service
 sudo systemctl restart python-blinds.service
 sudo journalctl -u python-blinds.service -f
 ```
@@ -117,9 +100,9 @@ sudo journalctl -u python-blinds.service -f
 ```yaml
 rest_command:
   blinds_open:
-    url: http://192.168.0.21:8083/open
+    url: http://192.168.0.21:3000/open
   blinds_close:
-    url: http://192.168.0.21:8083/close
+    url: http://192.168.0.21:3000/close
 ```
 Button up → `/open`, button down → `/close`. Press while moving → stops all motors.
 

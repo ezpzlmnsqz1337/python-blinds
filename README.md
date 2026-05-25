@@ -3,7 +3,7 @@
 A simple Python script to control a set of 2 blinds using Raspberry Pi and stepper motors.
 
 ## Features
-- Control the blinds using a web interface via WebSockets
+- Control the blinds using a web interface served by the Python service and connected via WebSockets
 - MQTT integration with ADAFRUIT.IO to allow voice control via Google Home (to be replaced with native Home Assistant voice control)
 - HTTP endpoints for Home Assistant physical button integration
 
@@ -34,8 +34,6 @@ Contains sha256 hash of the password to be used to access settings in the web in
 - on the Pi, `deploy.sh` installs `uv` if needed and builds `blinds/.venv`; the systemd service runs `blinds/.venv/bin/python -m blinds`
 - to install UI dependencies run `npm install` in the `ui` directory (requires Node 14–16; vue-cli-service v4 breaks on Node 17+)
 - to build the UI run `npm run build` in the `ui` directory
-- to install web server dependencies run `npm install` in the `webserver` directory
-- to build the webserver run `npm run build` in the `webserver` directory
 - to upload everything to the device via SSH create file `ssh-credentials` in the root directory:
 ```bash
 export USER=<your_username>
@@ -49,18 +47,17 @@ Add to your HA `configuration.yaml`:
 ```yaml
 rest_command:
   blinds_open:
-    url: http://192.168.0.21:8083/open
+    url: http://192.168.0.21:3000/open
   blinds_close:
-    url: http://192.168.0.21:8083/close
+    url: http://192.168.0.21:3000/close
 ```
 
 Both endpoints implement toggle logic: if blinds are moving → stop; otherwise open/close.
 
 ## Services
 
-Two systemd services run on the Pi:
-- `python-blinds.service` — Python motor control + WebSocket server (port 8082) + HTTP server (port 8083)
-- `python-blinds-webserver.service` — Node.js web UI server (port 3000)
+One systemd service runs on the Pi:
+- `python-blinds.service` — Python motor control + WebSocket server (port 8082) + HTTP server for the UI and HA endpoints (port 3000)
 
 ```bash
 uv run --project blinds -m blinds
