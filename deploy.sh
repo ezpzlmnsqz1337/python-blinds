@@ -41,8 +41,11 @@ ssh -t $USER@$DESTINATION "sudo chmod 644 /lib/systemd/system/python-blinds-webs
 echo -e "${BLUE}🔃 Restarting systemd...${NC}"
 ssh -t $USER@$DESTINATION "sudo systemctl daemon-reload" > /dev/null 2>&1 && echo -e "${GREEN}✅ systemd daemon reloaded${NC}"
 
+echo -e "${BLUE}🛠️  Ensuring uv is installed on the target...${NC}"
+ssh -t $USER@$DESTINATION "command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh" > /dev/null 2>&1 && echo -e "${GREEN}✅ uv is available${NC}"
+
 echo -e "${BLUE}🐍 Syncing Python dependencies with uv...${NC}"
-ssh -t $USER@$DESTINATION "cd /home/$USER/workspace/python-blinds && uv sync --project blinds --locked --no-dev" > /dev/null 2>&1 && echo -e "${GREEN}✅ Python dependencies synced${NC}"
+ssh -t $USER@$DESTINATION "export PATH=\"\$HOME/.local/bin:\$PATH\" && cd /home/$USER/workspace/python-blinds && uv sync --project blinds --locked --no-dev" > /dev/null 2>&1 && echo -e "${GREEN}✅ Python dependencies synced${NC}"
 
 echo -e "${BLUE}▶️  Enabling python-blinds service and restart it...${NC}"
 ssh -t $USER@$DESTINATION "sudo systemctl enable python-blinds.service" > /dev/null 2>&1 && echo -e "${GREEN}✅ python-blinds.service enabled${NC}"
