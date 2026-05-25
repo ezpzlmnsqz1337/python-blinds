@@ -315,6 +315,8 @@ dev = [
     { name = "black" },
     { name = "mypy" },
     { name = "ruff" },
+    { name = "types-pysocks" },
+    { name = "types-rpi-gpio" },
 ]
 
 [package.metadata]
@@ -329,6 +331,8 @@ dev = [
     { name = "black", specifier = ">=25.1.0,<26" },
     { name = "mypy", specifier = ">=2.1.0" },
     { name = "ruff", specifier = ">=0.15.14" },
+    { name = "types-pysocks", specifier = ">=1.7.1.20260518" },
+    { name = "types-rpi-gpio", specifier = ">=0.7.0.20260508" },
 ]
 
 [[package]]
@@ -456,6 +460,24 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/12/64/da524626d3b9cc40c168a13da8335fe1c51be12c0a63685cc6db7308daae/tomli-2.4.1-cp314-cp314t-win_amd64.whl", hash = "sha256:2c1c351919aca02858f740c6d33adea0c5deea37f9ecca1cc1ef9e884a619d26", size = 121196, upload-time = "2026-03-25T20:22:01.169Z" },
     { url = "https://files.pythonhosted.org/packages/5a/cd/e80b62269fc78fc36c9af5a6b89c835baa8af28ff5ad28c7028d60860320/tomli-2.4.1-cp314-cp314t-win_arm64.whl", hash = "sha256:eab21f45c7f66c13f2a9e0e1535309cee140182a9cdae1e041d02e47291e8396", size = 100393, upload-time = "2026-03-25T20:22:02.137Z" },
     { url = "https://files.pythonhosted.org/packages/7b/61/cceae43728b7de99d9b847560c262873a1f6c98202171fd5ed62640b494b/tomli-2.4.1-py3-none-any.whl", hash = "sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe", size = 14583, upload-time = "2026-03-25T20:22:03.012Z" },
+]
+
+[[package]]
+name = "types-pysocks"
+version = "1.7.1.20260518"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/6e/9f03a9eecb77b3c54870818877f00c2120570d6768efcc317522a157b002/types_pysocks-1.7.1.20260518.tar.gz", hash = "sha256:0ef3ae07bff70b2baa21b2ee323a724ceb7b242d13102528c5b495bbf2dc053c", size = 8915, upload-time = "2026-05-18T06:04:36.451Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/c5/eff9e732f267e6fe01a3cc91461804ddb35db3985feebe2711fb97093bd7/types_pysocks-1.7.1.20260518-py3-none-any.whl", hash = "sha256:2adc0bb2f696017ea6a8ed834d3f74d4d8b347b19a0ef25e96e939737f222295", size = 9621, upload-time = "2026-05-18T06:04:35.706Z" },
+]
+
+[[package]]
+name = "types-rpi-gpio"
+version = "0.7.0.20260508"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/5c/8214e3dc5862a06f0d3cf702d60937cb79bc0eb3c07ebc5bcfe2cf0d2567/types_rpi_gpio-0.7.0.20260508.tar.gz", hash = "sha256:03edf1a0cd00cda98029717271fe300cb3a343bf8cdfc240f80390eb9fb2e490", size = 8035, upload-time = "2026-05-08T04:48:44.434Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/1a/f0f6ff42530ff737b3448ecd6f38cbf8cb49a0ec8dae9381aa7beb51dc8a/types_rpi_gpio-0.7.0.20260508-py3-none-any.whl", hash = "sha256:ffbeab643c399b9174f4c08da5e6938858fa7a03f66eb8d842c6620af00901da", size = 8261, upload-time = "2026-05-08T04:48:43.665Z" },
 ]
 
 [[package]]

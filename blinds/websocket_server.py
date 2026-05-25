@@ -93,12 +93,36 @@ class WebSocketServer:
         if password == self.user_password:
             index = int(msg.split(":")[1])
             motor = self.motors_manager.get_motor(index)
-            motor.set_limit(motor.get_target_position())
+            motor.set_limit(motor.get_position())
             broadcast(
                 self.connections,
                 f"setLimit:motor:{index}:position:{motor.get_position()}",
             )
             self.motors_manager.save_config(motor)
+
+    def dispatch_message(self, msg: str) -> None:
+        command = msg.split(":", 1)[0]
+
+        if command == "up":
+            self.go_up(msg)
+        elif command == "down":
+            self.go_down(msg)
+        elif command == "stop":
+            self.stop(msg)
+        elif command == "closeBlind":
+            self.close_blind(msg)
+        elif command == "openBlind":
+            self.open_blind(msg)
+        elif command == "CLOSE":
+            self.close_blinds()
+        elif command == "OPEN":
+            self.open_blinds()
+        elif command == "setTopPosition":
+            self.set_top_position(msg)
+        elif command == "setLimit":
+            self.set_limit(msg)
+        elif command == "setIgnoreLimits":
+            self.set_ignore_limits(msg)
 
     def set_ignore_limits(self, msg: str) -> None:
         password = msg.split(":")[2]
@@ -124,26 +148,7 @@ class WebSocketServer:
             async for msg in websocket:
                 msg = str(msg)
                 print("Message: ", msg)
-                if "up" in msg:
-                    self.go_up(msg)
-                elif "down" in msg:
-                    self.go_down(msg)
-                elif "stop" in msg:
-                    self.stop(msg)
-                elif "closeBlind" in msg:
-                    self.close_blind(msg)
-                elif "openBlind" in msg:
-                    self.open_blind(msg)
-                elif "CLOSE" in msg:
-                    self.close_blinds()
-                elif "OPEN" in msg:
-                    self.open_blinds()
-                elif "setTopPosition" in msg:
-                    self.set_top_position(msg)
-                elif "setLimit" in msg:
-                    self.set_limit(msg)
-                elif "setIgnoreLimits" in msg:
-                    self.set_ignore_limits(msg)
+                self.dispatch_message(msg)
         except exceptions.ConnectionClosedError:
             print("Client disconnected without sending a close frame.")
         finally:

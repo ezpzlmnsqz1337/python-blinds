@@ -1,0 +1,18 @@
+{
+  "include": [
+    "blinds"
+  ],
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none",
+  "stubPath": "./blinds/typings",
+  "venvPath": "./blinds",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

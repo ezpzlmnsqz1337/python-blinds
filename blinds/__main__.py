@@ -3,7 +3,7 @@ import sys
 import threading
 import time
 
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO  # pyright: ignore[reportMissingImports, reportMissingModuleSource, reportMissingTypeStubs]
 
 from blinds.adafruit_mqtt import AdafruitIOMqttClient
 from blinds.http_server import HttpServer
