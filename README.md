@@ -32,14 +32,15 @@ Contains sha256 hash of the password to be used to access settings in the web in
 - install `uv` and run `cd blinds && uv sync --no-dev`
 - use `uv run --project blinds -m blinds` from the repository root to start the Python service locally
 - on the Pi, `deploy.sh` installs `uv` if needed and builds `blinds/.venv`; the systemd service runs `blinds/.venv/bin/python -m blinds`
-- to install UI dependencies run `npm install` in the `ui` directory (requires Node 14–16; vue-cli-service v4 breaks on Node 17+)
+- to install UI dependencies run `npm install` in the `ui` directory (Node 20; see `ui/.nvmrc`)
 - to build the UI run `npm run build` in the `ui` directory
 - to upload everything to the device via SSH create file `ssh-credentials` in the root directory:
 ```bash
 export USER=<your_username>
 export DESTINATION=<ssh_destination>
 ```
-- and run `./deploy.sh` in the root directory
+- and run `bash deploy.sh` in the root directory
+- or run `bash deploy.sh --ui-only` to upload only the already-built UI assets without restarting the Python service
 
 ## Home Assistant integration
 
@@ -58,6 +59,10 @@ Both endpoints implement toggle logic: if blinds are moving → stop; otherwise 
 
 One systemd service runs on the Pi:
 - `python-blinds.service` — Python motor control + WebSocket server (port 8082) + HTTP server for the UI and HA endpoints (port 3000)
+
+`python-blinds.service` declares `Wants=pigpiod.service` and `After=pigpiod.service`, so deploy does not need to enable or restart `pigpiod` separately on every run.
+
+If the UI is exposed through a reverse proxy, proxy `/ws` to the Pi's WebSocket server on `http://192.168.0.21:8082` or `ws://192.168.0.21:8082`. The frontend prefers a same-origin `/ws` endpoint and falls back to direct `:8082` only when reachable.
 
 ```bash
 uv run --project blinds -m blinds

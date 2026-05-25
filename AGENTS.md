@@ -15,7 +15,7 @@
 
 ```
 blinds/          Python package — motor control + WebSocket + HTTP server
-ui/              Vue.js — web UI for manual control and calibration
+ui/              Vue 3 + Vite + TypeScript web UI for manual control and calibration
 ```
 
 ### `blinds/` (Python)
@@ -71,21 +71,29 @@ blindsPosition:motor:<i>:position:<pos>:target:<target>:limit:<limit>:ignoreLimi
 
 Re-calibration is occasionally needed due to occasional step loss.
 
-### `ui/` (Vue.js)
+### `ui/` (Vue 3)
 
-Web interface for manual control and calibration. Served by the Python HTTP server on port 3000 and connects directly to the WebSocket server on port 8082.
+Web interface for manual control and calibration. Served by the Python HTTP server on port 3000. For direct LAN access it can connect to the WebSocket server on port 8082; for reverse-proxy access it prefers a same-origin `/ws` endpoint that should be proxied to port 8082.
+
+**Frontend workflow:**
+- Use Node 20 for this app (`ui/.nvmrc`).
+- Install dependencies with `cd ui && npm install`.
+- Validate changes with `npm run build`, `npm run lint`, and `npm run format:check`.
 
 ## Deployment
 
 ```bash
-./deploy.sh
+bash deploy.sh
+bash deploy.sh --ui-only
 ```
 
 - SSH target: `mazelpico@pizero2` (credentials in `ssh-credentials`)
 - Builds are expected to already be compiled (`ui/dist/`)
+- `bash deploy.sh --ui-only` uploads only `ui/dist/` and skips Python/service steps
 - Copies Python files, built UI assets, and the Python service file to the Pi
 - Copies `blinds/pyproject.toml` and `blinds/uv.lock` to the Pi, bootstraps `uv` if missing, and runs `uv sync --project blinds --locked --no-dev`
 - Installs the Python service to `/lib/systemd/system/`, reloads daemon, and restarts it
+- `pigpiod.service` is managed via the Python service unit dependencies rather than explicit deploy-script restarts
 
 **Useful commands on the Pi:**
 ```bash
