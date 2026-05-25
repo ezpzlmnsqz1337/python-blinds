@@ -34,6 +34,7 @@ Contains sha256 hash of the password to be used to access settings in the web in
 - on the Pi, `deploy.sh` installs `uv` if needed and builds `blinds/.venv`; the systemd service runs `blinds/.venv/bin/python -m blinds`
 - to install UI dependencies run `npm install` in the `ui` directory (Node 20; see `ui/.nvmrc`)
 - to build the UI run `npm run build` in the `ui` directory
+- to validate the UI locally run `npm run lint`, `npm run format:check`, and `npm run build` in `ui`; GitHub Actions runs the same checks on pushes and pull requests that touch `ui/`
 - to upload everything to the device via SSH create file `ssh-credentials` in the root directory:
 ```bash
 export USER=<your_username>

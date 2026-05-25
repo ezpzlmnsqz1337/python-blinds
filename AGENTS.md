@@ -79,6 +79,7 @@ Web interface for manual control and calibration. Served by the Python HTTP serv
 - Use Node 20 for this app (`ui/.nvmrc`).
 - Install dependencies with `cd ui && npm install`.
 - Validate changes with `npm run build`, `npm run lint`, and `npm run format:check`.
+- GitHub Actions workflow `.github/workflows/ui.yml` runs those same UI checks for `ui/**` changes.
 
 ## Deployment
 

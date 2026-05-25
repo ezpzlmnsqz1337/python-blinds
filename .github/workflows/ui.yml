@@ -1,0 +1,42 @@
+name: Blinds UI
+
+on:
+  push:
+    paths:
+      - .github/workflows/ui.yml
+      - ui/**
+  pull_request:
+    paths:
+      - .github/workflows/ui.yml
+      - ui/**
+
+jobs:
+  build-lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ui
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ui/.nvmrc
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Build UI
+        run: npm run build
