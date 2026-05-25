@@ -1,18 +1,25 @@
-from blinds.stepper_motor import StepperMotor
-from pathlib import Path
+import logging
 import threading
 import time
+from pathlib import Path
+
+from blinds.stepper_motor import StepperMotor
+
+logger = logging.getLogger(__name__)
 
 
 class MotorsManager:
     def __init__(self, motors: list[StepperMotor]) -> None:
         self.motors = motors
         self.motor_threads: list[threading.Thread] = []
+        self.config_lock = threading.Lock()
         self.stop_requested = False
         # disable motors
-        [m.disable() for m in self.motors]
+        for motor in self.motors:
+            motor.disable()
         # load motor configuration
-        [self.load_config(m) for m in self.motors]
+        for motor in self.motors:
+            self.load_config(motor)
 
         # invert direction of first motor
         motors[0].invert_direction(True)
@@ -23,16 +30,39 @@ class MotorsManager:
     def get_motors(self) -> list[StepperMotor]:
         return self.motors
 
+    def get_config_path(self, motor: StepperMotor) -> Path:
+        return Path(__file__).parent / f"config_m{motor.id}"
+
     def load_config(self, motor: StepperMotor) -> None:
-        with open(Path(__file__).parent / f"config_m{motor.id}", "r") as f:
-            motor.set_position(int(f.readline()))
-            motor.set_target_position(motor.get_position())
-            motor.set_limit(int(f.readline()))
+        config_path = self.get_config_path(motor)
+        try:
+            with self.config_lock:
+                with open(config_path, "r", encoding="utf-8") as config_file:
+                    position = int(config_file.readline().strip())
+                    limit = int(config_file.readline().strip())
+        except FileNotFoundError:
+            logger.warning("Missing motor config for motor %s at %s", motor.id, config_path)
+            position = 0
+            limit = 0
+        except ValueError:
+            logger.warning("Invalid motor config for motor %s at %s", motor.id, config_path)
+            position = 0
+            limit = 0
+
+        motor.set_position(position)
+        motor.set_target_position(position)
+        motor.set_limit(limit)
 
     def save_config(self, motor: StepperMotor) -> None:
-        with open(Path(__file__).parent / f"config_m{motor.id}", "w") as f:
-            f.write(f"{motor.get_position()}\n")
-            f.write(f"{motor.get_limit()}\n")
+        config_path = self.get_config_path(motor)
+        temp_path = config_path.with_suffix(f"{config_path.suffix}.tmp")
+        contents = f"{motor.get_position()}\n{motor.get_limit()}\n"
+
+        with self.config_lock:
+            with open(temp_path, "w", encoding="utf-8") as config_file:
+                config_file.write(contents)
+                config_file.flush()
+            temp_path.replace(config_path)
 
     def stop_motor_threads(self) -> None:
         for m in self.motors:
@@ -41,7 +71,8 @@ class MotorsManager:
             # stops the threads
             self.stop_requested = True
         # join their threads
-        [t.join() for t in self.motor_threads]
+        for thread in self.motor_threads:
+            thread.join()
         self.motor_threads.clear()
         self.stop_requested = False
 

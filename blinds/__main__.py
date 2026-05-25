@@ -1,14 +1,15 @@
-import time
 import logging
 import sys
 import threading
+import time
+
 import RPi.GPIO as GPIO
 
-from blinds.stepper_motor import StepperMotor
-from blinds.motors_manager import MotorsManager
-from blinds.websocket_server import WebSocketServer
 from blinds.adafruit_mqtt import AdafruitIOMqttClient
 from blinds.http_server import HttpServer
+from blinds.motors_manager import MotorsManager
+from blinds.stepper_motor import StepperMotor
+from blinds.websocket_server import WebSocketServer
 
 # Configure logging
 logging.basicConfig(
@@ -38,9 +39,11 @@ stop_requested = False
 def main() -> None:
     global websocket_server
     global motors_manager
+    global adafruit_mqtt_client
+    global http_server
     global websocket_thread
     global adafruit_mqtt_thread
-    
+
     logger.info("Starting Python Blinds Service...")
     GPIO.setmode(GPIO.BCM)
 
@@ -69,7 +72,7 @@ def main() -> None:
     while not stop_requested:
         websocket_server.send_motors_position()
         time.sleep(1)
-    
+
     logger.info("Main thread stopped")
 
 

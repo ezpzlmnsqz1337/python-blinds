@@ -5,14 +5,16 @@
 # username, and feed to subscribe to for changes.
 
 # Import standard python modules.
-import time
 import logging
 import ssl
-from typing import Any
+import time
 from io import TextIOWrapper
+from pathlib import Path
+from typing import Any
+
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import MQTTMessage
-from pathlib import Path
+
 from blinds.websocket_server import WebSocketServer
 
 logger = logging.getLogger(__name__)
@@ -39,9 +41,8 @@ class AdafruitIOMqttClient:
         if result == 0:
             logger.info(
                 "Connected to Adafruit IO!  Listening for %s changes...",
-                self.adafruit_io_feedname
+                self.adafruit_io_feedname,
             )
-            # Reset reconnect delay on successful connection
             self.reconnect_delay = 5
             client.subscribe(
                 "{0}/feeds/{1}".format(
@@ -55,14 +56,16 @@ class AdafruitIOMqttClient:
     def subscribed(self, client: mqtt.Client, userdata: Any, mid: int, granted_qos: Any) -> None:
         logger.info(
             "Subscribed to %s with QoS %d",
-            self.adafruit_io_feedname, granted_qos[0]
+            self.adafruit_io_feedname,
+            granted_qos[0],
         )
 
     def disconnected(self, client: mqtt.Client, userdata: Any, rc: int) -> None:
         if rc != 0:
             logger.warning(
-                "Unexpectedly disconnected from Adafruit IO! Return code: %d. Will attempt to reconnect...", 
-                rc
+                "Unexpectedly disconnected from Adafruit IO! Return code: %d. "
+                "Will attempt to reconnect...",
+                rc,
             )
         else:
             logger.info("Disconnected from Adafruit IO (clean disconnect)")
@@ -72,7 +75,8 @@ class AdafruitIOMqttClient:
             msg = message.payload.decode("utf-8")
             logger.info(
                 "Feed %s received new value: %s",
-                message.topic, msg
+                message.topic,
+                msg,
             )
             if msg == "OPEN":
                 self.websocket_server.open_blinds()
@@ -101,29 +105,31 @@ class AdafruitIOMqttClient:
                 logger.info("Connecting to Adafruit IO: %s", self.adafruit_io_url)
                 self.client.connect(self.adafruit_io_url, 8883, 60)
                 self.client.loop_forever()  # Blocks and handles reconnection automatically
-                
+
                 # If we get here, connection was lost and loop_forever returned
                 if not self.stop_requested:
                     logger.warning(
-                        "Connection lost. Reconnecting in %s seconds...", 
-                        self.reconnect_delay
+                        "Connection lost. Reconnecting in %s seconds...",
+                        self.reconnect_delay,
                     )
                     time.sleep(self.reconnect_delay)
                     # Exponential backoff
                     self.reconnect_delay = min(
-                        self.reconnect_delay * 2, 
-                        self.max_reconnect_delay
+                        self.reconnect_delay * 2,
+                        self.max_reconnect_delay,
                     )
             except Exception as e:
                 if not self.stop_requested:
                     logger.error(
                         "Error connecting to Adafruit IO: %s. Retrying in %s seconds...",
-                        e, self.reconnect_delay, exc_info=True
+                        e,
+                        self.reconnect_delay,
+                        exc_info=True,
                     )
                     time.sleep(self.reconnect_delay)
                     self.reconnect_delay = min(
-                        self.reconnect_delay * 2, 
-                        self.max_reconnect_delay
+                        self.reconnect_delay * 2,
+                        self.max_reconnect_delay,
                     )
 
         if self.client:

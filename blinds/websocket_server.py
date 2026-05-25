@@ -1,9 +1,10 @@
-from websockets.asyncio.server import serve, broadcast, ServerConnection
-from websockets import exceptions
-from blinds.motors_manager import MotorsManager
 import asyncio
-from websockets.asyncio.server import serve
 from pathlib import Path
+
+from websockets import exceptions
+from websockets.asyncio.server import ServerConnection, broadcast, serve
+
+from blinds.motors_manager import MotorsManager
 
 
 class WebSocketServer:
@@ -56,7 +57,7 @@ class WebSocketServer:
     def open_blinds(self) -> None:
         for m in self.motors_manager.get_motors():
             m.set_target_position(0)
-            broadcast(self.connections, f"motors: open, bottom limit: 0 ")
+            broadcast(self.connections, "motors: open, bottom limit: 0 ")
             self.motors_manager.save_config(m)
 
     def close_blind(self, msg: str) -> None:
@@ -110,7 +111,7 @@ class WebSocketServer:
 
     def send_motors_position(self) -> None:
         for i, m in enumerate(self.motors_manager.get_motors()):
-            ignore = 1 if m.get_ignore_limits() == True else 0
+            ignore = 1 if m.get_ignore_limits() else 0
             broadcast(
                 self.connections,
                 f"blindsPosition:motor:{i}:position:{m.get_position()}:target:{m.get_target_position()}:limit:{m.get_limit()}:ignoreLimit:{ignore}",

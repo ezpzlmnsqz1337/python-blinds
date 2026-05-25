@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 
+
 class StepperMotor:
     def __init__(self, pin0: int, pin1: int, pin2: int, pin3: int, id: int) -> None:
         self.pin0 = pin0
